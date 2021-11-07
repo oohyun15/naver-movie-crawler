@@ -85,7 +85,6 @@ func (movie *Movie) getPage(page int, url string, mainC chan<- []Review) {
 	var reviews []Review
 	c := make(chan Review)
 	pageURL := url + "&page=" + strconv.Itoa(page)
-	// fmt.Println("Requesting", pageURL)
 	res, err := http.Get(pageURL)
 	utils.CheckErr(err)
 	utils.CheckCode(res, pageURL)
