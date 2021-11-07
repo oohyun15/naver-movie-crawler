@@ -8,7 +8,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -20,7 +19,7 @@ type Movie struct {
 	size       int
 	page       int
 	score      map[int]int
-	mutex      *sync.Mutex
+	// mutex      *sync.Mutex
 }
 
 type Review struct {
@@ -32,8 +31,9 @@ type Review struct {
 
 func New(identifier string, title string) Movie {
 	size, page, score := initialize(identifier)
-	mutex := &sync.Mutex{}
-	movie := Movie{identifier, title, size, page, score, mutex}
+	movie := Movie{identifier, title, size, page, score}
+	// mutex := &sync.Mutex{}
+	// movie := Movie{identifier, title, size, page, score, mutex}
 	return movie
 }
 
@@ -80,8 +80,9 @@ func (movie *Movie) Scrape(batchSize int) {
 		}
 	}
 
-	movie.writeReviews(reviews)
+	movie.setScore(reviews)
 	fmt.Println("Result:", movie.score)
+	movie.writeReviews(reviews)
 }
 
 func (movie *Movie) getPage(page int, url string, mainC chan<- []Review) {
@@ -114,15 +115,21 @@ func (movie *Movie) extractReview(list *goquery.Selection, num int, c chan<- Rev
 	description := utils.CleanString(list.Find("div.score_reple p span#_filtered_ment_" + strconv.Itoa(num)).Text())
 	date := utils.CleanString(list.Find("div.score_reple dl dt em").Last().Text())
 
-	movie.mutex.Lock()
-	movie.score[score] += 1
-	movie.mutex.Unlock()
+	// movie.mutex.Lock()
+	// movie.score[score] += 1
+	// movie.mutex.Unlock()
 
 	c <- Review{
 		name:        name,
 		score:       score,
 		description: description,
 		date:        date,
+	}
+}
+
+func (movie *Movie) setScore(reviews []Review) {
+	for _, review := range reviews {
+		movie.score[review.score] += 1
 	}
 }
 
