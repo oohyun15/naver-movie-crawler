@@ -54,31 +54,30 @@ func initialize(identifier string) (int, int, map[int]int) {
 func (movie *Movie) Scrape(batchSize int) {
 	startTime := time.Now()
 	fmt.Println("start:", startTime)
-	fmt.Print("batch size: ", batchSize)
+	fmt.Println("batch size: ", batchSize)
 
 	var reviews []Review
-	var baseURL string = "https://movie.naver.com/movie/bi/mi/pointWriteFormList.nhn?code=" + movie.identifier + "&type=after&onlyActualPointYn=N&onlySpoilerPointYn=N&order=lowest"
+	var baseURL string = "https://movie.naver.com/movie/bi/mi/pointWriteFormList.nhn?code=" + movie.identifier
 	pages := movie.page
 	c := make(chan []Review)
-
 	for idx := 0; idx < pages/batchSize+1; idx++ {
 		start := idx*batchSize + 1
 		end := (idx + 1) * batchSize
 		if end > pages {
 			end = pages
 		}
-
+		fmt.Println("start: ", start, "end:", end)
 		for i := start; i <= end; i++ {
 			go movie.getPage(i, baseURL, c)
 		}
 
-		for i := start; i < end; i++ {
+		for i := start; i <= end; i++ {
 			extractedReviews := <-c
 			reviews = append(reviews, extractedReviews...)
 		}
+		fmt.Println("reviews:", len(reviews))
 	}
 
-	fmt.Println(reviews)
 	// writeReviews(reviews)
 
 	fmt.Println("Done, extracted")
