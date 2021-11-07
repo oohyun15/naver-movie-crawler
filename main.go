@@ -1,7 +1,12 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	movie "github.com/oohyun15/naver-movie-crawler/model"
+)
 
 func main() {
-	fmt.Println("Hello, world.")
+	m := movie.New("57723", "타짜")
+	fmt.Println(m)
 }
