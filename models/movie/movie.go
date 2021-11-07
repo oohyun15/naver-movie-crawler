@@ -1,9 +1,11 @@
 package movie
 
 import (
+	"encoding/csv"
 	"fmt"
 	"naver-movie-crawler/utils"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -22,8 +24,8 @@ type Movie struct {
 type Review struct {
 	name        string
 	score       int
-	date        string
 	description string
+	date        string
 }
 
 func New(identifier string, title string) Movie {
@@ -52,21 +54,20 @@ func initialize(identifier string) (int, int, map[int]int) {
 }
 
 func (movie *Movie) Scrape(batchSize int) {
-	startTime := time.Now()
-	fmt.Println("start:", startTime)
-	fmt.Println("batch size: ", batchSize)
-
+	fmt.Println("Scraping ", movie.title, "...")
 	var reviews []Review
 	var baseURL string = "https://movie.naver.com/movie/bi/mi/pointWriteFormList.nhn?code=" + movie.identifier
 	pages := movie.page
 	c := make(chan []Review)
+
 	for idx := 0; idx < pages/batchSize+1; idx++ {
 		start := idx*batchSize + 1
 		end := (idx + 1) * batchSize
 		if end > pages {
 			end = pages
 		}
-		fmt.Println("start: ", start, "end:", end)
+
+		fmt.Println("start: ", start, "end:", end, "reviews:", len(reviews))
 		for i := start; i <= end; i++ {
 			go movie.getPage(i, baseURL, c)
 		}
@@ -75,14 +76,9 @@ func (movie *Movie) Scrape(batchSize int) {
 			extractedReviews := <-c
 			reviews = append(reviews, extractedReviews...)
 		}
-		fmt.Println("reviews:", len(reviews))
 	}
 
-	// writeReviews(reviews)
-
-	fmt.Println("Done, extracted")
-	endTime := time.Now()
-	fmt.Println("end: ", endTime)
+	movie.writeReviews(reviews)
 }
 
 func (movie *Movie) getPage(page int, url string, mainC chan<- []Review) {
@@ -119,7 +115,31 @@ func (movie *Movie) extractReview(list *goquery.Selection, num int, c chan<- Rev
 	c <- Review{
 		name:        name,
 		score:       score,
-		date:        date,
 		description: description,
+		date:        date,
 	}
+}
+
+func (movie *Movie) writeReviews(reviews []Review) {
+	file, err := os.Create(movie.title + "_reviews(" + time.Now().Format("2006-01-02") + ").csv")
+	utils.CheckErr(err)
+
+	w := csv.NewWriter(file)
+	defer w.Flush()
+
+	headers := []string{"name", "score", "description", "date"}
+	wErr := w.Write(headers)
+	utils.CheckErr(wErr)
+	c := make(chan error)
+
+	for _, review := range reviews {
+		go movie.writeReview(review, w, c)
+		utils.CheckErr(<-c)
+	}
+}
+
+func (movie *Movie) writeReview(review Review, w *csv.Writer, c chan<- error) {
+	row := []string{review.name, strconv.Itoa(review.score), review.description, review.date}
+	err := w.Write(row)
+	c <- err
 }
