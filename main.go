@@ -1,12 +1,11 @@
 package main
 
 import (
-	"fmt"
-
-	movie "github.com/oohyun15/naver-movie-crawler/model"
+	"naver-movie-crawler/models/movie"
 )
 
 func main() {
-	m := movie.New("57723", "타짜")
-	fmt.Println(m)
+	batchSize := 100
+	movie := movie.New("57723", "타짜")
+	movie.Scrape(batchSize)
 }

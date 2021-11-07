@@ -1,4 +1,4 @@
-package errhd
+package utils
 
 import (
 	"fmt"
