@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -19,6 +20,7 @@ type Movie struct {
 	size       int
 	page       int
 	score      map[int]int
+	mutex      *sync.Mutex
 }
 
 type Review struct {
@@ -30,8 +32,8 @@ type Review struct {
 
 func New(identifier string, title string) Movie {
 	size, page, score := initialize(identifier)
-	movie := Movie{identifier, title, size, page, score}
-	fmt.Println(fmt.Sprintf("title: %v, identifier: %v, size: %v, page: %v", title, identifier, size, page))
+	mutex := &sync.Mutex{}
+	movie := Movie{identifier, title, size, page, score, mutex}
 	return movie
 }
 
@@ -54,7 +56,7 @@ func initialize(identifier string) (int, int, map[int]int) {
 }
 
 func (movie *Movie) Scrape(batchSize int) {
-	fmt.Println("Scraping ", movie.title, "...")
+	fmt.Println("Scraping " + movie.title + "...")
 	var reviews []Review
 	var baseURL string = "https://movie.naver.com/movie/bi/mi/pointWriteFormList.nhn?code=" + movie.identifier
 	pages := movie.page
@@ -79,6 +81,7 @@ func (movie *Movie) Scrape(batchSize int) {
 	}
 
 	movie.writeReviews(reviews)
+	fmt.Println("Result:", movie.score)
 }
 
 func (movie *Movie) getPage(page int, url string, mainC chan<- []Review) {
@@ -110,7 +113,11 @@ func (movie *Movie) extractReview(list *goquery.Selection, num int, c chan<- Rev
 	score, _ := strconv.Atoi(list.Find("div.star_score em").Text())
 	description := utils.CleanString(list.Find("div.score_reple p span#_filtered_ment_" + strconv.Itoa(num)).Text())
 	date := utils.CleanString(list.Find("div.score_reple dl dt em").Last().Text())
-	// movie.score[score] += 1
+
+	movie.mutex.Lock()
+	movie.score[score] += 1
+	movie.mutex.Unlock()
+
 	c <- Review{
 		name:        name,
 		score:       score,
