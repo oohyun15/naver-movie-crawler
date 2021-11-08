@@ -137,9 +137,9 @@ func (movie *Movie) writeScore(reviews []Review) {
 
 	headers := make([]string, 0, len(movie.score)+1)
 	row := make([]string, 0, len(movie.score)+1)
-	for k, v := range movie.score {
-		headers = append(headers, strconv.Itoa(k))
-		row = append(row, strconv.Itoa(v))
+	for i := 1; i <= len(movie.score); i++ {
+		headers = append(headers, strconv.Itoa(i))
+		row = append(row, strconv.Itoa(movie.score[i]))
 	}
 	headers = append(headers, "total")
 	row = append(row, strconv.Itoa(movie.size))
