@@ -1,6 +1,6 @@
 import math
-
 import requests
+import datetime
 from bs4 import BeautifulSoup
 import csv
 
@@ -61,6 +61,9 @@ class NaveMovie:
         else:
             raise
 
+start_time = datetime.datetime.now()
+print(f'start time: {start_time}')
+
 movie_list = [
     {"name": "타짜", "code": 57723},
     {"name": "겨울왕국", "code": 100931},
@@ -68,7 +71,7 @@ movie_list = [
     {"name": "기생충", "code": 161967},
     {"name": "소울", "code": 184517},
 ]
-with open('./result3.csv', 'w', newline='') as csvfile:
+with open('./result.csv', 'w', newline='') as csvfile:
     fieldnames = ['title', 'score', 'count']
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     for movie in movie_list:
@@ -83,3 +86,9 @@ with open('./result3.csv', 'w', newline='') as csvfile:
             len_score = naver_movie.score_dict[score]
             writer.writerow({'title': movie["name"], 'score': score, 'count': len_score})
         writer.writerow({'title': movie["name"], 'score': "total_size", 'count': naver_movie.total_size})
+
+end_time = datetime.datetime.now()
+print(f'end time: {end_time}')
+
+elapsed_time = end_time - start_time
+print(f'elapsed time: {elapsed_time}')
