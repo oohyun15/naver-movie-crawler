@@ -56,7 +56,7 @@ func initialize(identifier string) (int, int, map[int]int) {
 }
 
 func (movie *Movie) Scrape(batchSize int) {
-	fmt.Println("Scraping " + movie.title + "...")
+	fmt.Println("Scraping " + movie.title + "..." + "(total:" + strconv.Itoa(movie.size) + ")")
 	var reviews []Review
 	var baseURL string = "https://movie.naver.com/movie/bi/mi/pointWriteFormList.nhn?code=" + movie.identifier
 	pages := movie.page
@@ -80,8 +80,7 @@ func (movie *Movie) Scrape(batchSize int) {
 		}
 	}
 
-	movie.setScore(reviews)
-	fmt.Println("Result:", movie.score)
+	movie.writeScore(reviews)
 	movie.writeReviews(reviews)
 }
 
@@ -125,6 +124,30 @@ func (movie *Movie) extractReview(list *goquery.Selection, num int, c chan<- Rev
 		description: description,
 		date:        date,
 	}
+}
+
+func (movie *Movie) writeScore(reviews []Review) {
+	movie.setScore(reviews)
+
+	file, err := os.Create(movie.title + "_score(" + time.Now().Format("2006-01-02") + ").csv")
+	utils.CheckErr(err)
+
+	w := csv.NewWriter(file)
+	defer w.Flush()
+
+	headers := make([]string, 0, len(movie.score)+1)
+	row := make([]string, 0, len(movie.score)+1)
+	for k, v := range movie.score {
+		headers = append(headers, strconv.Itoa(k))
+		row = append(row, strconv.Itoa(v))
+	}
+	headers = append(headers, "total")
+	row = append(row, strconv.Itoa(movie.size))
+
+	wErr := w.Write(headers)
+	utils.CheckErr(wErr)
+	wErr = w.Write(row)
+	utils.CheckErr(wErr)
 }
 
 func (movie *Movie) setScore(reviews []Review) {

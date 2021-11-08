@@ -26,5 +26,7 @@ func main() {
 	}
 
 	endTime := time.Now()
-	fmt.Println("end: ", endTime)
+	fmt.Println("end:", endTime)
+	elapsedTime := endTime.Sub(startTime)
+	fmt.Println("elapsed:", elapsedTime)
 }
